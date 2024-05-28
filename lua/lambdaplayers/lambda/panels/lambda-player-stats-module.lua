@@ -412,9 +412,9 @@ local function OpenStatsPanel( ply )
             local first_weapon = top_weapons[ 1 ] and top_weapons[ 1 ][ 1 ] or "N/A"
             local second_weapon = top_weapons[ 2 ] and top_weapons[ 2 ][ 1 ] or "N/A"
             local third_weapon = top_weapons[ 3 ] and top_weapons[ 3 ][ 1 ] or "N/A"
-            local first_weapon_count = top_weapons[ 1 ] and top_weapons[ 1 ][ 1 ] or "N/A"
-            local second_weapon_count = top_weapons[ 2 ] and top_weapons[ 2 ][ 1 ] or "N/A"
-            local third_weapon_count = top_weapons[ 3 ] and top_weapons[ 3 ][ 1 ] or "N/A"
+            local first_weapon_count = top_weapons[ 1 ] and top_weapons[ 1 ][ 2 ] or "N/A"
+            local second_weapon_count = top_weapons[ 2 ] and top_weapons[ 2 ][ 2 ] or "N/A"
+            local third_weapon_count = top_weapons[ 3 ] and top_weapons[ 3 ][ 2 ] or "N/A"
     
             HandleText( "Leading Player: ", first_lambda .. " with " .. first_lambda_count .. " kills.", toplambdas_1, no_animation )
             HandleText( "Second Leading Player: ", second_lambda .. " with " .. second_lambda_count .. " kills.", toplambdas_2, no_animation )
