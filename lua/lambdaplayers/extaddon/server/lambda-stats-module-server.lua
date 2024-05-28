@@ -64,9 +64,24 @@ hook.Add( "LambdaOnOtherKilled", "lambdastats_onotherkilled", function( lambda, 
     local data = LAMBDAFS:ReadFile( "lambdaplayers/stats.json", "json" )
     local stats = data["individual"][ lambda:Name() ] or {}
 
+    local wepdata = _LAMBDAPLAYERSWEAPONS[ lambda:GetWeaponName() ]
+    local weaponstats = stats[ "weaponstats" ] or {}
+    local glb_weaponstats = data[ "glb_weaponstats" ] or {}
+
+    local weapondata = weaponstats[ wepdata.prettyname ] or {}
+    local glb_weapondata = glb_weaponstats[ wepdata.prettyname ] or {}
+
+    weapondata.kills = weapondata.kills and weapondata.kills + 1 or 1
+    glb_weapondata.kills = glb_weapondata.kills and glb_weapondata.kills + 1 or 1
+
+    weaponstats[ wepdata.prettyname ] = weapondata
+    glb_weaponstats[ wepdata.prettyname ] = glb_weapondata
+
     stats[ "kills" ] = stats[ "kills" ] and stats[ "kills" ] + 1 or 1
     data[ "glb_kills" ] = data[ "glb_kills" ] and data[ "glb_kills" ] + 1 or 1
 
+    stats[ "weaponstats" ] = weaponstats
+    data[ "glb_weaponstats" ] = glb_weaponstats
     data["individual"][ lambda:Name() ] = stats
     LAMBDAFS:WriteFile( "lambdaplayers/stats.json", data, "json" )
 end )
@@ -93,8 +108,14 @@ hook.Add( "LambdaOnSwitchWeapon", "lambdastats_onswitchweapon", function( lambda
     local weaponstats = stats[ "weaponstats" ] or {}
     local glb_weaponstats = data[ "glb_weaponstats" ] or {}
 
-    weaponstats[ wepdata.prettyname ] = weaponstats[ wepdata.prettyname ] and weaponstats[ wepdata.prettyname ] + 1 or 1
-    glb_weaponstats[ wepdata.prettyname ] = glb_weaponstats[ wepdata.prettyname ] and glb_weaponstats[ wepdata.prettyname ] + 1 or 1
+    local weapondata = weaponstats[ wepdata.prettyname ] or {}
+    weapondata.uses = weapondata.uses and weapondata.uses + 1 or 1
+
+    local glb_weapondata = glb_weaponstats[ wepdata.prettyname ] or {}
+    glb_weapondata.uses = glb_weapondata.uses and glb_weapondata.uses + 1 or 1
+
+    weaponstats[ wepdata.prettyname ] = weapondata
+    glb_weaponstats[ wepdata.prettyname ] = glb_weapondata
 
     stats[ "weaponstats" ] = weaponstats
     data["individual"][ lambda:Name() ] = stats
