@@ -58,6 +58,17 @@ hook.Add( "LambdaOnRemove", "lambdastats_onremove", function( lambda )
     LAMBDAFS:WriteFile( "lambdaplayers/stats.json", data, "json" )
 end )
 
+hook.Add( "LambdaPlayerSay", "lambdastats_playersay", function( lambda, text )
+    local data = LAMBDAFS:ReadFile( "lambdaplayers/stats.json", "json" )
+    local stats = data["individual"][ lambda:Name() ] or {}
+
+    stats[ "textsize" ] = stats[ "textsize" ] and stats[ "textsize" ] + #text or #text
+    data[ "glb_textsize" ] = data[ "glb_textsize" ] and data[ "glb_textsize" ] + #text or #text
+
+    data["individual"][ lambda:Name() ] = stats
+    LAMBDAFS:WriteFile( "lambdaplayers/stats.json", data, "json" )
+end )
+
 -- Log Local and Global kills
 hook.Add( "LambdaOnOtherKilled", "lambdastats_onotherkilled", function( lambda, victim, info )
     if info:GetAttacker() != lambda or !info:GetAttacker().IsLambdaPlayer then return end

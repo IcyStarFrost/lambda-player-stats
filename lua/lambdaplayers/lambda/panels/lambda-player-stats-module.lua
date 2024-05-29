@@ -106,6 +106,7 @@ local function OpenIndividualStats( name, data )
     local total_spawns = LAMBDAPANELS:CreateLabel( "Total First Spawns: " .. ( data.initialspawns or 1 ), scroll, TOP )
     local lastseen = LAMBDAPANELS:CreateLabel( "Last seen: " .. os.date( "%m/%d/%Y %I:%M %p", ( data.lastseen or os.time() ) ), scroll, TOP )
     local playtime = LAMBDAPANELS:CreateLabel( "Play Time: " .. string.NiceTime( data.playtime ), scroll, TOP )
+    local textsize = LAMBDAPANELS:CreateLabel( "Total Text Sent: " .. ( string.NiceSize( data.textsize or 0 ) ), scroll, TOP )
 
     local usedweapons_1 = LAMBDAPANELS:CreateLabel( "Most Popular Weapon: N/A", scroll, TOP )
     local usedweapons_2 = LAMBDAPANELS:CreateLabel( "Second Most Popular Weapon: N/A", scroll, TOP )
@@ -115,11 +116,46 @@ local function OpenIndividualStats( name, data )
     local effectiveweapons_2 = LAMBDAPANELS:CreateLabel( "Second Most Effective Weapon: N/A", scroll, TOP )
     local effectiveweapons_3 = LAMBDAPANELS:CreateLabel( "Third Most Effective Weapon: N/A", scroll, TOP )
 
-    local weps = CreateWeaponsTable( data.weaponstats )
+    -- Fallback parameters
+    for name, wepdata in pairs( data.weaponstats ) do
+        data.weaponstats[ name ].kills = data.weaponstats[ name ].kills or 0
+        data.weaponstats[ name ].uses = data.weaponstats[ name ].uses or 1
+    end
 
-    local weaponuses = LAMBDAPANELS:CreateLabel( "--- Individual Weapon Stats ---", scroll, TOP )
+    local individual_weaponpnl = LAMBDAPANELS:CreateBasicPanel( scroll, TOP )
+    individual_weaponpnl:SetSize( scroll:GetWide(), 500 )
+
+    local left = LAMBDAPANELS:CreateBasicPanel( individual_weaponpnl, LEFT )
+    left:SetSize( individual_main:GetWide() / 2, 1 )
+    left.Paint = black_paint
+
+    local weaponuses = LAMBDAPANELS:CreateLabel( "--- Weapon Uses ---", left, TOP )
+    weaponuses:SetFont("Trebuchet24")
+    weaponuses:DockMargin( 0, 70, 0, 30 )
+
+    local uses_scroll = LAMBDAPANELS:CreateScrollPanel( left, false, FILL )
+
+    local right = LAMBDAPANELS:CreateBasicPanel( individual_weaponpnl, LEFT )
+    right:SetSize( individual_main:GetWide() / 2, 1 )
+    right.Paint = black_paint
+
+    local weaponkills = LAMBDAPANELS:CreateLabel( "--- Weapon Kills ---", right, TOP )
+    weaponkills:SetFont("Trebuchet24")
+    weaponkills:DockMargin( 0, 70, 0, 30 )
+
+    local kills_scroll = LAMBDAPANELS:CreateScrollPanel( right, false, FILL )
+
+    local weps = CreateWeaponsTable( data.weaponstats )
+    local effectiveweps = CreateWeaponsTable( data.weaponstats, true )
     for k, tbl in pairs( weps ) do
-        local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. tbl[ 2 ].uses .. " uses and " .. tbl[ 2 ].kills .. " kills.", scroll, TOP )
+        local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. tbl[ 2 ].uses .. " uses.", uses_scroll, TOP )
+        if clrs[ k ] then
+            lbl:SetColor( clrs[ k ] )
+        end
+    end
+
+    for k, tbl in pairs( effectiveweps ) do
+        local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. tbl[ 2 ].kills .. " kills.", kills_scroll, TOP )
         if clrs[ k ] then
             lbl:SetColor( clrs[ k ] )
         end
@@ -138,9 +174,11 @@ local function OpenIndividualStats( name, data )
     playtime:SetFont("Trebuchet24")
     weaponuses:SetFont("Trebuchet24")
     kd_ratio:SetFont("Trebuchet24")
+    textsize:SetFont("Trebuchet24")
 
     weaponuses:DockMargin( 0, 70, 0, 30 )
     kd_ratio:DockMargin( 0, 10, 0, 10 )
+    textsize:DockMargin( 0, 10, 0, 10 )
     playtime:DockMargin( 0, 10, 0, 30 )
     total_kills:DockMargin( 0, 10, 0, 10 )
     lastseen:DockMargin( 0, 10, 0, 10 )
@@ -217,9 +255,9 @@ local function OpenIndividualStats( name, data )
     HandleText( "Second Most Used Weapon: ", second_wep .. " with " .. second_count .. " uses.", usedweapons_2 )
     HandleText( "Third Most Used Weapon: ", third_wep .. " with " .. third_count .. " uses.", usedweapons_3 )
 
-    HandleText( "Most Effective Weapon: ", first_effective_wep .. " with " .. first_effective_count .. " uses.", effectiveweapons_1 )
-    HandleText( "Second Most Effective Weapon: ", second_effective_wep .. " with " .. second_effective_count .. " uses.", effectiveweapons_2 )
-    HandleText( "Third Most Effective Weapon: ", third_effective_wep .. " with " .. third_effective_count .. " uses.", effectiveweapons_3 )
+    HandleText( "Most Effective Weapon: ", first_effective_wep .. " with " .. first_effective_count .. " kills.", effectiveweapons_1 )
+    HandleText( "Second Most Effective Weapon: ", second_effective_wep .. " with " .. second_effective_count .. " kills.", effectiveweapons_2 )
+    HandleText( "Third Most Effective Weapon: ", third_effective_wep .. " with " .. third_effective_count .. " kills.", effectiveweapons_3 )
 
     HandleText( "", name .. "'s individual Statistics", header )
 end
@@ -309,6 +347,7 @@ local function OpenStatsPanel( ply )
     local total_kills = LAMBDAPANELS:CreateLabel( "Total Kills: N/A", scroll, TOP )
     local total_deaths = LAMBDAPANELS:CreateLabel( "Total Deaths: N/A", scroll, TOP )
     local total_spawns = LAMBDAPANELS:CreateLabel( "Total Lambdas Spawned: N/A", scroll, TOP )
+    local total_textsize = LAMBDAPANELS:CreateLabel( "Total Text Sent: N/A", scroll, TOP )
 
     LAMBDAPANELS:CreateButton( scroll, TOP, "View Individual Lambda Stats", function()
         OpenIndividualDataBase( curdata.individual )
@@ -323,16 +362,38 @@ local function OpenStatsPanel( ply )
         end, "No" )
     end )
 
-    local weaponuses = LAMBDAPANELS:CreateLabel( "--- Individual Weapon Stats ---", scroll, TOP )
+
+    local individual_weaponpnl = LAMBDAPANELS:CreateBasicPanel( scroll, TOP )
+    individual_weaponpnl:SetSize( scroll:GetWide(), 500 )
+
+    local left = LAMBDAPANELS:CreateBasicPanel( individual_weaponpnl, LEFT )
+    left:SetSize( main:GetWide() / 2, 1 )
+    left.Paint = black_paint
+
+    local weaponuses = LAMBDAPANELS:CreateLabel( "--- Weapon Uses ---", left, TOP )
     weaponuses:SetFont("Trebuchet24")
     weaponuses:DockMargin( 0, 70, 0, 30 )
+
+    local uses_scroll = LAMBDAPANELS:CreateScrollPanel( left, false, FILL )
+
+    local right = LAMBDAPANELS:CreateBasicPanel( individual_weaponpnl, LEFT )
+    right:SetSize( main:GetWide() / 2, 1 )
+    right.Paint = black_paint
+
+    local weaponkills = LAMBDAPANELS:CreateLabel( "--- Weapon Kills ---", right, TOP )
+    weaponkills:SetFont("Trebuchet24")
+    weaponkills:DockMargin( 0, 70, 0, 30 )
+
+    local kills_scroll = LAMBDAPANELS:CreateScrollPanel( right, false, FILL )
 
     --- Global Data ---
     total_kills:SetFont("Trebuchet24")
     total_deaths:SetFont("Trebuchet24")
     total_spawns:SetFont("Trebuchet24")
+    total_textsize:SetFont("Trebuchet24")
 
     total_kills:DockMargin( 0, 10, 0, 10 )
+    total_textsize:DockMargin( 0, 10, 0, 10 )
     total_deaths:DockMargin( 0, 10, 0, 10 )
     total_spawns:DockMargin( 0, 10, 0, 10 )
     ---------------------------------------------
@@ -429,6 +490,7 @@ local function OpenStatsPanel( ply )
     ---------------------------------------------
 
     local weaponuses_lbls = {}
+    local weaponkills_lbls = {}
 
     function refresh_lbl:UpdateData( no_animation )
         LAMBDAPANELS:RequestDataFromServer( "lambdaplayers/stats.json", "json", function( data )
@@ -437,27 +499,42 @@ local function OpenStatsPanel( ply )
             total_kills:SetText( "Total Kills: " .. ( data.glb_kills or 0 ) )
             total_deaths:SetText( "Total Deaths: " .. ( data.glb_deaths or 0 ) )
             total_spawns:SetText( "Total Lambdas Spawned: " .. ( data.glb_initialspawns or 0 ) )
+            total_textsize:SetText( "Total Text Sent: " .. string.NiceSize( ( data.glb_textsize or 0 ) ) )
+
+            -- Fallback parameters
+            if data.glb_weaponstats then
+                for name, wepdata in pairs( data.glb_weaponstats ) do
+                    data.glb_weaponstats[ name ].kills = data.glb_weaponstats[ name ].kills or 0
+                    data.glb_weaponstats[ name ].uses = data.glb_weaponstats[ name ].uses or 1
+                end
+            end
     
             local top_lambdas = CreateLambdaKillsTable(  data.individual or {} )
             local top_kd_lambdas = CreateLambdaKDTable( data.individual or {} )
             local top_weapons = CreateWeaponsTable( data.glb_weaponstats or {} )
+            local effective_weapons = CreateWeaponsTable( data.glb_weaponstats or {}, true )
 
             for k, tbl in pairs( top_weapons ) do
                 if weaponuses_lbls[ tbl[ 1 ] ] then
-                    weaponuses_lbls[ tbl[ 1 ] ]:SetText( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].uses or 1 ) .. " uses and " .. ( tbl[ 2 ].kills or 0 ) .. " kills." )
-                    if clrs[ k ] then
-                        weaponuses_lbls[ tbl[ 1 ] ]:SetColor( clrs[ k ] )
-                    end
-                else
-                    local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].uses or 1 ) .. " uses and " .. ( tbl[ 2 ].kills or 0 ) .. " kills.", scroll, TOP )
-                    if clrs[ k ] then
-                        lbl:SetColor( clrs[ k ] )
-                    end
-                    weaponuses_lbls[ tbl[ 1 ] ] = lbl
+                    weaponuses_lbls[ tbl[ 1 ] ]:Remove()
                 end
+                local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].uses or 1 ) .. " uses.", uses_scroll, TOP )
+                if clrs[ k ] then
+                    lbl:SetColor( clrs[ k ] )
+                end
+                weaponuses_lbls[ tbl[ 1 ] ] = lbl
             end
 
-            local effective_weapons = CreateWeaponsTable( data.glb_weaponstats, true )
+            for k, tbl in pairs( effective_weapons ) do
+                if weaponkills_lbls[ tbl[ 1 ] ] then
+                    weaponkills_lbls[ tbl[ 1 ] ]:Remove()
+                end
+                local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].kills or 1 ) .. " Kills.", kills_scroll, TOP )
+                if clrs[ k ] then
+                    lbl:SetColor( clrs[ k ] )
+                end
+                weaponkills_lbls[ tbl[ 1 ] ] = lbl
+            end
 
             local first_lambda = top_lambdas[ 1 ] and top_lambdas[ 1 ][ 1 ] or "N/A"
             local second_lambda = top_lambdas[ 2 ] and top_lambdas[ 2 ][ 1 ] or "N/A"
