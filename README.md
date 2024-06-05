@@ -17,4 +17,5 @@ A module that will track various information about your Lambdas from kill counts
 - Top 3 most individual weapon kills
 - Individual Lambda stats
 - Individual Weapon stats
+  
 ![egnmUch](https://github.com/IcyStarFrost/lambda-player-stats/assets/109770359/c9ba37b9-0ad8-42ca-8c30-a91c5efc67c3)
