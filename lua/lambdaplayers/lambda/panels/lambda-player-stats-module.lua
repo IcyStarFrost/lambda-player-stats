@@ -294,7 +294,7 @@ local function OpenIndividualDataBase( data )
     listview:Dock(FILL)
 
     LAMBDAPANELS:CreateLabel( "Search Bar", database_main, TOP )
-    LAMBDAPANELS:CreateSearchBar( listview, data, database_main, true ):Dock( TOP )
+    LAMBDAPANELS:CreateSearchBar( listview, table.GetKeys( data ), database_main, false ):Dock( TOP )
 
     listview.Paint = black_paint
 
