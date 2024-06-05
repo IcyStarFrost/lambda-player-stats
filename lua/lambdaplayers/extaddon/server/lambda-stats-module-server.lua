@@ -3,14 +3,6 @@ if !file.Exists( "lambdaplayers/stats.json", "DATA" ) then
 end
 
 
---[[ 
-local data = LAMBDAFS:ReadFile( "lambdaplayers/stats.json", "json" )
-local stats = data["individual"][ lambda:Name() ] or {}
-
-data["individual"][ lambda:Name() ] = stats
-LAMBDAFS:WriteFile( "lambdaplayers/stats.json", data, "json" )
- ]]
-
 -- Adds time to a Lambda's playtime
 local function AddPlayTime( lambda, time )
     local data = LAMBDAFS:ReadFile( "lambdaplayers/stats.json", "json" )
