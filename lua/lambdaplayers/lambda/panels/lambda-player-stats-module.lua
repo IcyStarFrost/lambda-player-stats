@@ -325,6 +325,8 @@ local function OpenStatsPanel( ply )
     local main = LAMBDAPANELS:CreateFrame( "Lambda Player Statistics", ScrW() * 0.7, ScrH() * 0.7 )
     local scroll = LAMBDAPANELS:CreateScrollPanel( main, false, FILL )
 
+    local patience_inator9000 = LAMBDAPANELS:CreateLabel( "Please wait while the Panel retrieves the Lambda Stats from the Server.." )
+
     main.Paint = black_paint
     scroll.Paint = black_paint
 
@@ -519,104 +521,119 @@ local function OpenStatsPanel( ply )
     local weaponuses_lbls = {}
     local weaponkills_lbls = {}
 
+    local function UpdateData( data, no_animation )
+        if !data then return end
+    
+        -- Set the total labels
+        total_kills:SetText( "Total Kills: " .. ( data.glb_kills or 0 ) )
+        total_deaths:SetText( "Total Deaths: " .. ( data.glb_deaths or 0 ) )
+        total_spawns:SetText( "Total Lambdas Spawned: " .. ( data.glb_initialspawns or 0 ) )
+        total_textsize:SetText( "Total Text Sent: " .. string.NiceSize( ( data.glb_textsize or 0 ) ) )
+
+        -- Fallback parameters
+        -- Gotta love potentially missing data
+        if data.glb_weaponstats then
+            for name, wepdata in pairs( data.glb_weaponstats ) do
+                data.glb_weaponstats[ name ].kills = data.glb_weaponstats[ name ].kills or 0
+                data.glb_weaponstats[ name ].uses = data.glb_weaponstats[ name ].uses or 1
+            end
+        end
+
+        -- Create the sorted tables
+        local top_lambdas = CreateLambdaKillsTable(  data.individual or {} )
+        local top_kd_lambdas = CreateLambdaKDTable( data.individual or {} )
+        local top_weapons = CreateWeaponsTable( data.glb_weaponstats or {} )
+        local effective_weapons = CreateWeaponsTable( data.glb_weaponstats or {}, true )
+
+        -- Update the individual weapon uses
+        for k, tbl in pairs( top_weapons ) do
+            if weaponuses_lbls[ tbl[ 1 ] ] then
+                weaponuses_lbls[ tbl[ 1 ] ]:Remove()
+            end
+            local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].uses or 1 ) .. " uses.", uses_scroll, TOP )
+            if clrs[ k ] then
+                lbl:SetColor( clrs[ k ] )
+            end
+            weaponuses_lbls[ tbl[ 1 ] ] = lbl
+        end
+
+        -- Update the individual weapon kills
+        for k, tbl in pairs( effective_weapons ) do
+            if weaponkills_lbls[ tbl[ 1 ] ] then
+                weaponkills_lbls[ tbl[ 1 ] ]:Remove()
+            end
+            local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].kills or 1 ) .. " Kills.", kills_scroll, TOP )
+            if clrs[ k ] then
+                lbl:SetColor( clrs[ k ] )
+            end
+            weaponkills_lbls[ tbl[ 1 ] ] = lbl
+        end
+
+        -- A bunch of variables with fallbacks. Arceus, this is quite something.
+        local first_lambda = top_lambdas[ 1 ] and top_lambdas[ 1 ][ 1 ] or "N/A"
+        local second_lambda = top_lambdas[ 2 ] and top_lambdas[ 2 ][ 1 ] or "N/A"
+        local third_lambda = top_lambdas[ 3 ] and top_lambdas[ 3 ][ 1 ] or "N/A"
+        local first_lambda_count = top_lambdas[ 1 ] and top_lambdas[ 1 ][ 2 ] or "N/A"
+        local second_lambda_count = top_lambdas[ 2 ] and top_lambdas[ 2 ][ 2 ] or "N/A"
+        local third_lambda_count = top_lambdas[ 3 ] and top_lambdas[ 3 ][ 2 ] or "N/A"
+
+        local first_kd_lambda = top_kd_lambdas[ 1 ] and top_kd_lambdas[ 1 ][ 1 ] or "N/A"
+        local second_kd_lambda = top_kd_lambdas[ 2 ] and top_kd_lambdas[ 2 ][ 1 ] or "N/A"
+        local third_kd_lambda = top_kd_lambdas[ 3 ] and top_kd_lambdas[ 3 ][ 1 ] or "N/A"
+        local first_kd_lambda_count = top_kd_lambdas[ 1 ] and top_kd_lambdas[ 1 ][ 2 ] or "N/A"
+        local second_kd_lambda_count = top_kd_lambdas[ 2 ] and top_kd_lambdas[ 2 ][ 2 ] or "N/A"
+        local third_kd_lambda_count = top_kd_lambdas[ 3 ] and top_kd_lambdas[ 3 ][ 2 ] or "N/A"
+
+        local first_weapon = top_weapons[ 1 ] and top_weapons[ 1 ][ 1 ] or "N/A"
+        local second_weapon = top_weapons[ 2 ] and top_weapons[ 2 ][ 1 ] or "N/A"
+        local third_weapon = top_weapons[ 3 ] and top_weapons[ 3 ][ 1 ] or "N/A"
+        local first_weapon_count = top_weapons[ 1 ] and top_weapons[ 1 ][ 2 ].uses or "N/A"
+        local second_weapon_count = top_weapons[ 2 ] and top_weapons[ 2 ][ 2 ].uses or "N/A"
+        local third_weapon_count = top_weapons[ 3 ] and top_weapons[ 3 ][ 2 ].uses or "N/A"
+
+        local first_effective_weapon = effective_weapons[ 1 ] and effective_weapons[ 1 ][ 1 ] or "N/A"
+        local second_effective_weapon = effective_weapons[ 2 ] and effective_weapons[ 2 ][ 1 ] or "N/A"
+        local third_effective_weapon = effective_weapons[ 3 ] and effective_weapons[ 3 ][ 1 ] or "N/A"
+        local first_effective_weapon_count = effective_weapons[ 1 ] and effective_weapons[ 1 ][ 2 ].kills or "N/A"
+        local second_effective_weapon_count = effective_weapons[ 2 ] and effective_weapons[ 2 ][ 2 ].kills or "N/A"
+        local third_effective_weapon_count = effective_weapons[ 3 ] and effective_weapons[ 3 ][ 2 ].kills or "N/A"
+
+        -- Animate these labels
+        HandleText( "Leading Player: ", first_lambda .. " with " .. first_lambda_count .. " kills.", toplambdas_1, no_animation )
+        HandleText( "Second Leading Player: ", second_lambda .. " with " .. second_lambda_count .. " kills.", toplambdas_2, no_animation )
+        HandleText( "Third Leading Player: ", third_lambda .. " with " .. third_lambda_count .. " kills.", toplambdas_3, no_animation )
+
+        HandleText( "Leading Kill/Death Ratio Player: ", first_kd_lambda .. " with a KD of " .. first_kd_lambda_count, toplambdas_kd_1, no_animation )
+        HandleText( "Second Leading Kill/Death Ratio Player: ", second_kd_lambda .. " with a KD of " .. second_kd_lambda_count, toplambdas_kd_2, no_animation )
+        HandleText( "Third Leading Kill/Death Ratio Player: ", third_kd_lambda .. " with a KD of " .. third_kd_lambda_count, toplambdas_kd_3, no_animation )
+
+        HandleText( "Most Used Weapon: ", first_weapon .. " with " .. first_weapon_count .. " uses.", usedweapons_1, no_animation )
+        HandleText( "Second Most Used Weapon: ", second_weapon .. " with " .. second_weapon_count .. " uses.", usedweapons_2, no_animation )
+        HandleText( "Third Most Used Weapon: ", third_weapon .. " with " .. third_weapon_count .. " uses.", usedweapons_3, no_animation )
+
+        HandleText( "Most Effective Weapon: ", first_effective_weapon .. " with " .. first_effective_weapon_count .. " kills.", effectiveweapons_1, no_animation )
+        HandleText( "Second Most Effective Weapon: ", second_effective_weapon .. " with " .. second_effective_weapon_count .. " kills.", effectiveweapons_2, no_animation )
+        HandleText( "Third Most Effective Weapon: ", third_effective_weapon .. " with " .. third_effective_weapon_count .. " kills.", effectiveweapons_3, no_animation )
+        
+        curdata = data
+    end
+
     -- Updates the panel's data. This function is a method to refresh_lbl so it can be used further up the function
     function refresh_lbl:UpdateData( no_animation )
-        LAMBDAPANELS:RequestDataFromServer( "lambdaplayers/stats.json", "json", function( data )
-            if !data then return end
-    
-            -- Set the total labels
-            total_kills:SetText( "Total Kills: " .. ( data.glb_kills or 0 ) )
-            total_deaths:SetText( "Total Deaths: " .. ( data.glb_deaths or 0 ) )
-            total_spawns:SetText( "Total Lambdas Spawned: " .. ( data.glb_initialspawns or 0 ) )
-            total_textsize:SetText( "Total Text Sent: " .. string.NiceSize( ( data.glb_textsize or 0 ) ) )
 
-            -- Fallback parameters
-            -- Gotta love potentially missing data
-            if data.glb_weaponstats then
-                for name, wepdata in pairs( data.glb_weaponstats ) do
-                    data.glb_weaponstats[ name ].kills = data.glb_weaponstats[ name ].kills or 0
-                    data.glb_weaponstats[ name ].uses = data.glb_weaponstats[ name ].uses or 1
+        if !LocalPlayer():IsListenServerHost() then
+            LAMBDAPANELS:RequestDataFromServer( "lambdaplayers/stats.json", "json", function( data )
+
+                if IsValid( patience_inator9000 ) then
+                    patience_inator9000:Remove()
                 end
-            end
-    
-            -- Create the sorted tables
-            local top_lambdas = CreateLambdaKillsTable(  data.individual or {} )
-            local top_kd_lambdas = CreateLambdaKDTable( data.individual or {} )
-            local top_weapons = CreateWeaponsTable( data.glb_weaponstats or {} )
-            local effective_weapons = CreateWeaponsTable( data.glb_weaponstats or {}, true )
 
-            -- Update the individual weapon uses
-            for k, tbl in pairs( top_weapons ) do
-                if weaponuses_lbls[ tbl[ 1 ] ] then
-                    weaponuses_lbls[ tbl[ 1 ] ]:Remove()
-                end
-                local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].uses or 1 ) .. " uses.", uses_scroll, TOP )
-                if clrs[ k ] then
-                    lbl:SetColor( clrs[ k ] )
-                end
-                weaponuses_lbls[ tbl[ 1 ] ] = lbl
-            end
+                UpdateData( data, no_animation )
 
-            -- Update the individual weapon kills
-            for k, tbl in pairs( effective_weapons ) do
-                if weaponkills_lbls[ tbl[ 1 ] ] then
-                    weaponkills_lbls[ tbl[ 1 ] ]:Remove()
-                end
-                local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. ( tbl[ 2 ].kills or 1 ) .. " Kills.", kills_scroll, TOP )
-                if clrs[ k ] then
-                    lbl:SetColor( clrs[ k ] )
-                end
-                weaponkills_lbls[ tbl[ 1 ] ] = lbl
-            end
-
-            -- A bunch of variables with fallbacks. Arceus, this is quite something.
-            local first_lambda = top_lambdas[ 1 ] and top_lambdas[ 1 ][ 1 ] or "N/A"
-            local second_lambda = top_lambdas[ 2 ] and top_lambdas[ 2 ][ 1 ] or "N/A"
-            local third_lambda = top_lambdas[ 3 ] and top_lambdas[ 3 ][ 1 ] or "N/A"
-            local first_lambda_count = top_lambdas[ 1 ] and top_lambdas[ 1 ][ 2 ] or "N/A"
-            local second_lambda_count = top_lambdas[ 2 ] and top_lambdas[ 2 ][ 2 ] or "N/A"
-            local third_lambda_count = top_lambdas[ 3 ] and top_lambdas[ 3 ][ 2 ] or "N/A"
-
-            local first_kd_lambda = top_kd_lambdas[ 1 ] and top_kd_lambdas[ 1 ][ 1 ] or "N/A"
-            local second_kd_lambda = top_kd_lambdas[ 2 ] and top_kd_lambdas[ 2 ][ 1 ] or "N/A"
-            local third_kd_lambda = top_kd_lambdas[ 3 ] and top_kd_lambdas[ 3 ][ 1 ] or "N/A"
-            local first_kd_lambda_count = top_kd_lambdas[ 1 ] and top_kd_lambdas[ 1 ][ 2 ] or "N/A"
-            local second_kd_lambda_count = top_kd_lambdas[ 2 ] and top_kd_lambdas[ 2 ][ 2 ] or "N/A"
-            local third_kd_lambda_count = top_kd_lambdas[ 3 ] and top_kd_lambdas[ 3 ][ 2 ] or "N/A"
-
-            local first_weapon = top_weapons[ 1 ] and top_weapons[ 1 ][ 1 ] or "N/A"
-            local second_weapon = top_weapons[ 2 ] and top_weapons[ 2 ][ 1 ] or "N/A"
-            local third_weapon = top_weapons[ 3 ] and top_weapons[ 3 ][ 1 ] or "N/A"
-            local first_weapon_count = top_weapons[ 1 ] and top_weapons[ 1 ][ 2 ].uses or "N/A"
-            local second_weapon_count = top_weapons[ 2 ] and top_weapons[ 2 ][ 2 ].uses or "N/A"
-            local third_weapon_count = top_weapons[ 3 ] and top_weapons[ 3 ][ 2 ].uses or "N/A"
-
-            local first_effective_weapon = effective_weapons[ 1 ] and effective_weapons[ 1 ][ 1 ] or "N/A"
-            local second_effective_weapon = effective_weapons[ 2 ] and effective_weapons[ 2 ][ 1 ] or "N/A"
-            local third_effective_weapon = effective_weapons[ 3 ] and effective_weapons[ 3 ][ 1 ] or "N/A"
-            local first_effective_weapon_count = effective_weapons[ 1 ] and effective_weapons[ 1 ][ 2 ].kills or "N/A"
-            local second_effective_weapon_count = effective_weapons[ 2 ] and effective_weapons[ 2 ][ 2 ].kills or "N/A"
-            local third_effective_weapon_count = effective_weapons[ 3 ] and effective_weapons[ 3 ][ 2 ].kills or "N/A"
-    
-            -- Animate these labels
-            HandleText( "Leading Player: ", first_lambda .. " with " .. first_lambda_count .. " kills.", toplambdas_1, no_animation )
-            HandleText( "Second Leading Player: ", second_lambda .. " with " .. second_lambda_count .. " kills.", toplambdas_2, no_animation )
-            HandleText( "Third Leading Player: ", third_lambda .. " with " .. third_lambda_count .. " kills.", toplambdas_3, no_animation )
-    
-            HandleText( "Leading Kill/Death Ratio Player: ", first_kd_lambda .. " with a KD of " .. first_kd_lambda_count, toplambdas_kd_1, no_animation )
-            HandleText( "Second Leading Kill/Death Ratio Player: ", second_kd_lambda .. " with a KD of " .. second_kd_lambda_count, toplambdas_kd_2, no_animation )
-            HandleText( "Third Leading Kill/Death Ratio Player: ", third_kd_lambda .. " with a KD of " .. third_kd_lambda_count, toplambdas_kd_3, no_animation )
-    
-            HandleText( "Most Used Weapon: ", first_weapon .. " with " .. first_weapon_count .. " uses.", usedweapons_1, no_animation )
-            HandleText( "Second Most Used Weapon: ", second_weapon .. " with " .. second_weapon_count .. " uses.", usedweapons_2, no_animation )
-            HandleText( "Third Most Used Weapon: ", third_weapon .. " with " .. third_weapon_count .. " uses.", usedweapons_3, no_animation )
-
-            HandleText( "Most Effective Weapon: ", first_effective_weapon .. " with " .. first_effective_weapon_count .. " kills.", effectiveweapons_1, no_animation )
-            HandleText( "Second Most Effective Weapon: ", second_effective_weapon .. " with " .. second_effective_weapon_count .. " kills.", effectiveweapons_2, no_animation )
-            HandleText( "Third Most Effective Weapon: ", third_effective_weapon .. " with " .. third_effective_weapon_count .. " kills.", effectiveweapons_3, no_animation )
-            
-            curdata = data
-        end, true )
+            end, true )
+        else
+            UpdateData( LAMBDAFS:ReadFile( "lambdaplayers/stats.json", "json" ), no_animation )
+        end
     end
 
     refresh_lbl:UpdateData()
