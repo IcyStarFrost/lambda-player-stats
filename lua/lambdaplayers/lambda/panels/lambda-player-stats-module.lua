@@ -325,7 +325,7 @@ local function OpenStatsPanel( ply )
     local main = LAMBDAPANELS:CreateFrame( "Lambda Player Statistics", ScrW() * 0.7, ScrH() * 0.7 )
     local scroll = LAMBDAPANELS:CreateScrollPanel( main, false, FILL )
 
-    local patience_inator9000 = LAMBDAPANELS:CreateLabel( "Please wait while the Panel retrieves the Lambda Stats from the Server.." )
+    local patience_inator9000 = LAMBDAPANELS:CreateLabel( "Please wait while the Panel retrieves the Lambda Stats from the Server..", main, TOP )
 
     main.Paint = black_paint
     scroll.Paint = black_paint
@@ -522,6 +522,11 @@ local function OpenStatsPanel( ply )
     local weaponkills_lbls = {}
 
     local function UpdateData( data, no_animation )
+
+        if IsValid( patience_inator9000 ) then
+            patience_inator9000:Remove()
+        end
+        
         if !data then return end
     
         -- Set the total labels
@@ -623,10 +628,6 @@ local function OpenStatsPanel( ply )
 
         if !LocalPlayer():IsListenServerHost() then
             LAMBDAPANELS:RequestDataFromServer( "lambdaplayers/stats.json", "json", function( data )
-
-                if IsValid( patience_inator9000 ) then
-                    patience_inator9000:Remove()
-                end
 
                 UpdateData( data, no_animation )
 
