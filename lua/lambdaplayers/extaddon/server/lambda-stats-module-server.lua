@@ -58,6 +58,7 @@ hook.Add( "LambdaOnRemove", "lambdastats_onremove", function( lambda )
     LAMBDAFS:WriteFile( "lambdaplayers/stats.json", data, "json" )
 end )
 
+-- Logs every byte of text sent in chat
 hook.Add( "LambdaPlayerSay", "lambdastats_playersay", function( lambda, text )
     local data = LAMBDAFS:ReadFile( "lambdaplayers/stats.json", "json" )
     local stats = data["individual"][ lambda:Name() ] or {}

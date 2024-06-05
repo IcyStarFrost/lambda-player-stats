@@ -13,6 +13,8 @@ local clrs = {
     Color( 97, 44, 0 ),
 }
 
+-- Allows the ability to play a "typewriter" animation on DLabels.
+-- Prefix is static prefix text, while text is the string that will be animated in
 local function HandleText( prefix, text, lbl, no_animate )
     local text_table = string.ToTable( text )
     local cursor = 0
@@ -52,11 +54,13 @@ local function HandleText( prefix, text, lbl, no_animate )
     end )
 end
 
+-- Panel style hook 
 local function black_paint( self, w, h )
     surface.SetDrawColor( 0, 0, 0, 150 )
     surface.DrawRect( 0, 0, w, h )
 end
 
+-- Returns a sorted table based on Lambda kills
 local function CreateLambdaKillsTable( tbl )
     local seq = {}
     for name, data in pairs( tbl ) do
@@ -67,6 +71,7 @@ local function CreateLambdaKillsTable( tbl )
     return seq
 end
 
+-- Returns a sorted table based on Lambda Kill/Death ratio
 local function CreateLambdaKDTable( tbl )
     local seq = {}
     for name, data in pairs( tbl ) do
@@ -78,6 +83,7 @@ local function CreateLambdaKDTable( tbl )
     return seq
 end
 
+-- Returns a sorted table based on an individual weapon's kills or times used
 local function CreateWeaponsTable( tbl, sortbykills )
     local sorted = {}
     for name, data in SortedPairsByMemberValue( tbl, sortbykills and "kills" or "uses", true ) do
@@ -87,11 +93,14 @@ local function CreateWeaponsTable( tbl, sortbykills )
     return sorted
 end
 
+-- Opens a panel to view a individual Lambda's stats
 local individual_main 
 local function OpenIndividualStats( name, data )
     if IsValid( individual_main ) then
         individual_main:Remove()
     end
+
+    -- The main panel
     individual_main = LAMBDAPANELS:CreateFrame( name .. "'s stats", ScrW() * 0.5, ScrH() * 0.5 )
     local scroll = LAMBDAPANELS:CreateScrollPanel( individual_main, false, FILL )
 
@@ -99,6 +108,7 @@ local function OpenIndividualStats( name, data )
 
     local kd = math.Round( ( ( data.kills or 0 ) / ( data.deaths or 1 ) ), 1 )
     
+    ---------- Stat labels ----------
     local header = LAMBDAPANELS:CreateLabel( name .. "'s Individual Statistics", individual_main, TOP )
     local total_kills = LAMBDAPANELS:CreateLabel( "Total Kills: " .. ( data.kills or 0 ), scroll, TOP )
     local total_deaths = LAMBDAPANELS:CreateLabel( "Total Deaths: " .. ( data.deaths or 0 ), scroll, TOP )
@@ -115,6 +125,7 @@ local function OpenIndividualStats( name, data )
     local effectiveweapons_1 = LAMBDAPANELS:CreateLabel( "Most Effective Weapon: N/A", scroll, TOP )
     local effectiveweapons_2 = LAMBDAPANELS:CreateLabel( "Second Most Effective Weapon: N/A", scroll, TOP )
     local effectiveweapons_3 = LAMBDAPANELS:CreateLabel( "Third Most Effective Weapon: N/A", scroll, TOP )
+    ------------------------------
 
     -- Fallback parameters
     for name, wepdata in pairs( data.weaponstats ) do
@@ -122,6 +133,7 @@ local function OpenIndividualStats( name, data )
         data.weaponstats[ name ].uses = data.weaponstats[ name ].uses or 1
     end
 
+    ---------- Individual Weapon Stats ----------
     local individual_weaponpnl = LAMBDAPANELS:CreateBasicPanel( scroll, TOP )
     individual_weaponpnl:SetSize( scroll:GetWide(), 500 )
 
@@ -145,6 +157,7 @@ local function OpenIndividualStats( name, data )
 
     local kills_scroll = LAMBDAPANELS:CreateScrollPanel( right, false, FILL )
 
+    -- Display individual weapon uses
     local weps = CreateWeaponsTable( data.weaponstats )
     local effectiveweps = CreateWeaponsTable( data.weaponstats, true )
     for k, tbl in pairs( weps ) do
@@ -154,12 +167,14 @@ local function OpenIndividualStats( name, data )
         end
     end
 
+    -- Display individual weapon kills
     for k, tbl in pairs( effectiveweps ) do
         local lbl = LAMBDAPANELS:CreateLabel( k .. ".      " .. tbl[ 1 ] .. ": " .. tbl[ 2 ].kills .. " kills.", kills_scroll, TOP )
         if clrs[ k ] then
             lbl:SetColor( clrs[ k ] )
         end
     end
+    ----------------------------------------
     
     header:SetColor( Color( math.random( 0, 255 ), math.random( 0, 255 ), math.random( 0, 255 ) ) )
     header:SetFont("Trebuchet24")
@@ -235,6 +250,7 @@ local function OpenIndividualStats( name, data )
 
     local effectiveweps = CreateWeaponsTable( data.weaponstats, true )
 
+    -- Once again, fall back variables
     local first_wep = weps[ 1 ] and weps[ 1 ][ 1 ] or "N/A"
     local second_wep = weps[ 2 ] and weps[ 2 ][ 1 ] or "N/A"
     local third_wep = weps[ 3 ] and weps[ 3 ][ 1 ] or "N/A"
@@ -251,6 +267,7 @@ local function OpenIndividualStats( name, data )
     local second_effective_count = effectiveweps[ 2 ] and effectiveweps[ 2 ][ 2 ].kills or "N/A"
     local third_effective_count = effectiveweps[ 3 ] and effectiveweps[ 3 ][ 2 ].kills or "N/A"
 
+    -- Animate these labels
     HandleText( "Most Used Weapon: ", first_wep .. " with " .. first_count .. " uses.", usedweapons_1 )
     HandleText( "Second Most Used Weapon: ", second_wep .. " with " .. second_count .. " uses.", usedweapons_2 )
     HandleText( "Third Most Used Weapon: ", third_wep .. " with " .. third_count .. " uses.", usedweapons_3 )
@@ -262,12 +279,16 @@ local function OpenIndividualStats( name, data )
     HandleText( "", name .. "'s individual Statistics", header )
 end
 
+-- Opens a panel to list off every Lambda with stats saved.
+-- Fairly simple panel
 local database_main
 local function OpenIndividualDataBase( data )
     if !data then return end
     if IsValid( database_main ) then
         database_main:Remove()
     end
+    
+    -- The main panel
     database_main = LAMBDAPANELS:CreateFrame( "Individual Stat Viewer", ScrW() * 0.2, ScrH() * 0.2 )
     local listview = vgui.Create( "DListView", database_main )
     listview:Dock(FILL)
@@ -286,6 +307,7 @@ local function OpenIndividualDataBase( data )
         line.Paint = black_paint
     end
 
+    -- Open the individual Lambda's stats
     function listview:DoDoubleClick( id, line )
         OpenIndividualStats( line:GetColumnText( 1 ), data[ line:GetColumnText( 1 ) ] )
     end
@@ -297,7 +319,9 @@ local function OpenIndividualDataBase( data )
 
 end
 
+-- Opens the main stats panel
 local function OpenStatsPanel( ply )
+    -- Main panels
     local main = LAMBDAPANELS:CreateFrame( "Lambda Player Statistics", ScrW() * 0.7, ScrH() * 0.7 )
     local scroll = LAMBDAPANELS:CreateScrollPanel( main, false, FILL )
 
@@ -314,6 +338,7 @@ local function OpenStatsPanel( ply )
         if IsValid( individual_main ) then individual_main:Remove() end
     end
 
+    -- Auto refresh the panel's data
     LambdaCreateThread( function()
         local next_refresh = CurTime() + 10
         while IsValid( refresh_lbl ) do
@@ -328,6 +353,7 @@ local function OpenStatsPanel( ply )
         end
     end )
 
+    ---------- Global Stats ----------
     local toplambdas_1 = LAMBDAPANELS:CreateLabel( "Leading Player: N/A", scroll, TOP )
     local toplambdas_2 = LAMBDAPANELS:CreateLabel( "Second Leading Player: N/A", scroll, TOP )
     local toplambdas_3 = LAMBDAPANELS:CreateLabel( "Third Leading Player: N/A", scroll, TOP )
@@ -349,6 +375,7 @@ local function OpenStatsPanel( ply )
     local total_spawns = LAMBDAPANELS:CreateLabel( "Total Lambdas Spawned: N/A", scroll, TOP )
     local total_textsize = LAMBDAPANELS:CreateLabel( "Total Text Sent: N/A", scroll, TOP )
 
+    ---------- Buttons ----------
     LAMBDAPANELS:CreateButton( scroll, TOP, "View Individual Lambda Stats", function()
         OpenIndividualDataBase( curdata.individual )
     end )
@@ -362,7 +389,7 @@ local function OpenStatsPanel( ply )
         end, "No" )
     end )
 
-
+    ---------- Individual Weapon Panels ----------
     local individual_weaponpnl = LAMBDAPANELS:CreateBasicPanel( scroll, TOP )
     individual_weaponpnl:SetSize( scroll:GetWide(), 500 )
 
@@ -492,16 +519,19 @@ local function OpenStatsPanel( ply )
     local weaponuses_lbls = {}
     local weaponkills_lbls = {}
 
+    -- Updates the panel's data. This function is a method to refresh_lbl so it can be used further up the function
     function refresh_lbl:UpdateData( no_animation )
         LAMBDAPANELS:RequestDataFromServer( "lambdaplayers/stats.json", "json", function( data )
             if !data then return end
     
+            -- Set the total labels
             total_kills:SetText( "Total Kills: " .. ( data.glb_kills or 0 ) )
             total_deaths:SetText( "Total Deaths: " .. ( data.glb_deaths or 0 ) )
             total_spawns:SetText( "Total Lambdas Spawned: " .. ( data.glb_initialspawns or 0 ) )
             total_textsize:SetText( "Total Text Sent: " .. string.NiceSize( ( data.glb_textsize or 0 ) ) )
 
             -- Fallback parameters
+            -- Gotta love potentially missing data
             if data.glb_weaponstats then
                 for name, wepdata in pairs( data.glb_weaponstats ) do
                     data.glb_weaponstats[ name ].kills = data.glb_weaponstats[ name ].kills or 0
@@ -509,11 +539,13 @@ local function OpenStatsPanel( ply )
                 end
             end
     
+            -- Create the sorted tables
             local top_lambdas = CreateLambdaKillsTable(  data.individual or {} )
             local top_kd_lambdas = CreateLambdaKDTable( data.individual or {} )
             local top_weapons = CreateWeaponsTable( data.glb_weaponstats or {} )
             local effective_weapons = CreateWeaponsTable( data.glb_weaponstats or {}, true )
 
+            -- Update the individual weapon uses
             for k, tbl in pairs( top_weapons ) do
                 if weaponuses_lbls[ tbl[ 1 ] ] then
                     weaponuses_lbls[ tbl[ 1 ] ]:Remove()
@@ -525,6 +557,7 @@ local function OpenStatsPanel( ply )
                 weaponuses_lbls[ tbl[ 1 ] ] = lbl
             end
 
+            -- Update the individual weapon kills
             for k, tbl in pairs( effective_weapons ) do
                 if weaponkills_lbls[ tbl[ 1 ] ] then
                     weaponkills_lbls[ tbl[ 1 ] ]:Remove()
@@ -536,6 +569,7 @@ local function OpenStatsPanel( ply )
                 weaponkills_lbls[ tbl[ 1 ] ] = lbl
             end
 
+            -- A bunch of variables with fallbacks. Arceus, this is quite something.
             local first_lambda = top_lambdas[ 1 ] and top_lambdas[ 1 ][ 1 ] or "N/A"
             local second_lambda = top_lambdas[ 2 ] and top_lambdas[ 2 ][ 1 ] or "N/A"
             local third_lambda = top_lambdas[ 3 ] and top_lambdas[ 3 ][ 1 ] or "N/A"
@@ -564,6 +598,7 @@ local function OpenStatsPanel( ply )
             local second_effective_weapon_count = effective_weapons[ 2 ] and effective_weapons[ 2 ][ 2 ].kills or "N/A"
             local third_effective_weapon_count = effective_weapons[ 3 ] and effective_weapons[ 3 ][ 2 ].kills or "N/A"
     
+            -- Animate these labels
             HandleText( "Leading Player: ", first_lambda .. " with " .. first_lambda_count .. " kills.", toplambdas_1, no_animation )
             HandleText( "Second Leading Player: ", second_lambda .. " with " .. second_lambda_count .. " kills.", toplambdas_2, no_animation )
             HandleText( "Third Leading Player: ", third_lambda .. " with " .. third_lambda_count .. " kills.", toplambdas_3, no_animation )
